@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:spend_wise/screens/expense_screen.dart';
 import 'package:spend_wise/screens/todo_screen.dart';
-import ' models/expense.dart';
-import ' models/todo.dart';
+
+import 'models/expense.dart';
+import 'models/todo.dart';
 
 void main() {
   runApp(const SpendWiseApp());
@@ -17,9 +18,9 @@ class SpendWiseApp extends StatelessWidget {
       title: 'SpendWise',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.purple),
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF5F7FA),
+        scaffoldBackgroundColor: const Color(0xFFFC90BA),
         appBarTheme: const AppBarTheme(centerTitle: false),
       ),
       home: const SpendWiseHome(),
@@ -40,7 +41,40 @@ class _SpendWiseHomeState extends State<SpendWiseHome> {
   final List<Expense> _expenses = <Expense>[];
   final List<Todo> _todos = <Todo>[];
 
+  // ── ACTION METHODS ──────────────────────────────────────────────
 
+  void _addExpense(Expense expense) {
+    setState(() {
+      _expenses.add(expense);
+      _expenses.sort((Expense a, Expense b) => b.date.compareTo(a.date));
+    });
+  }
+
+  void _deleteExpense(int index) {
+    setState(() {
+      _expenses.removeAt(index);
+    });
+  }
+
+  void _addTodo(String title) {
+    setState(() {
+      _todos.add(Todo(title: title, createdAt: DateTime.now()));
+    });
+  }
+
+  void _deleteTodo(int index) {
+    setState(() {
+      _todos.removeAt(index);
+    });
+  }
+
+  void _toggleTodo(int index) {
+    setState(() {
+      _todos[index].isDone = !_todos[index].isDone;
+    });
+  }
+
+  // ── BUILD ────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -53,8 +87,17 @@ class _SpendWiseHomeState extends State<SpendWiseHome> {
           title: Text(titles[_selectedTab]),
         ),
         body: _selectedTab == 0
-            ? const ExpenseScreen()
-            : const TodoScreen(),
+            ? ExpenseScreen(
+          expenses: _expenses,
+          onAddExpense: _addExpense,
+          onDeleteExpense: _deleteExpense,
+        )
+            : TodoScreen(
+          todos: _todos,
+          onAddTodo: _addTodo,
+          onToggleTodo: _toggleTodo,
+          onDeleteTodo: _deleteTodo,
+        ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedTab,
           onTap: (int index) {
@@ -76,4 +119,4 @@ class _SpendWiseHomeState extends State<SpendWiseHome> {
       ),
     );
   }
-}  // closes _SpendWiseHomeState
+}

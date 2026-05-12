@@ -23,8 +23,11 @@ class ExpenseScreen extends StatefulWidget {
 class _ExpenseScreenState extends State<ExpenseScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
+
   ExpenseCategory _selectedCategory = ExpenseCategory.food;
+
   DateTime _selectedDate = DateTime.now();
+
   DateTime? _filterDate;
 
   @override
@@ -36,13 +39,14 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
   Future<void> _presentDatePicker() async {
     final DateTime now = DateTime.now();
-    final DateTime firstDate = DateTime(now.year - 1, now.month, now.day);
+
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: firstDate,
+      firstDate: DateTime(now.year - 1),
       lastDate: now,
     );
+
     if (pickedDate != null) {
       setState(() {
         _selectedDate = pickedDate;
@@ -50,29 +54,14 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     }
   }
 
-  Future<void> _selectFilterDate() async {
-    final DateTime now = DateTime.now();
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _filterDate ?? now,
-      firstDate: DateTime(now.year - 5),
-      lastDate: now,
-    );
-    setState(() {
-      _filterDate = picked;
-    });
-  }
-
   void _submitExpense() {
     final String title = _titleController.text.trim();
-    final double? amount = double.tryParse(_amountController.text.trim());
+
+    final double? amount = double.tryParse(
+      _amountController.text.trim(),
+    );
 
     if (title.isEmpty || amount == null || amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enter a valid title and amount greater than 0.'),
-        ),
-      );
       return;
     }
 
@@ -87,186 +76,247 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
     _titleController.clear();
     _amountController.clear();
-    setState(() {
-      _selectedCategory = ExpenseCategory.food;
-      _selectedDate = DateTime.now();
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<Expense> displayedExpenses = _filterDate == null
-        ? widget.expenses
-        : widget.expenses.where((Expense e) {
-      return e.date.year == _filterDate!.year &&
-          e.date.month == _filterDate!.month &&
-          e.date.day == _filterDate!.day;
-    }).toList();
-
-    final double total = displayedExpenses.fold<double>(
+    final double total = widget.expenses.fold<double>(
       0,
           (double sum, Expense item) => sum + item.amount,
     );
 
-    return Column(
-      children: [
-        // ── ADD EXPENSE FORM ──────────────────────────────────────
-        Card(
-          margin: const EdgeInsets.all(12),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
+    return Container(
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: const AssetImage('assets/images/bg.jpg'),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(
+            Colors.white.withOpacity(0.65),
+            BlendMode.lighten,
+          ),
+        ),
+      ),
+
+      child: Column(
+        children: [
+          Card(
+            color: Colors.white.withOpacity(0.88),
+            elevation: 8,
+            shadowColor: Colors.pinkAccent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            margin: const EdgeInsets.all(12),
+
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _titleController,
+
+                    decoration: const InputDecoration(
+                      labelText: 'Expense title',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _amountController,
+
+                          keyboardType:
+                          const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+
+                          decoration: const InputDecoration(
+                            labelText: 'Amount',
+                            prefixText: '₹ ',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 10),
+
+                      Expanded(
+                        child:
+                        DropdownButtonFormField<ExpenseCategory>(
+                          value: _selectedCategory,
+
+                          decoration: const InputDecoration(
+                            labelText: 'Category',
+                            border: OutlineInputBorder(),
+                          ),
+
+                          items: ExpenseCategory.values
+                              .map(
+                                (ExpenseCategory category) =>
+                                DropdownMenuItem<
+                                    ExpenseCategory>(
+                                  value: category,
+                                  child: Text(category.label),
+                                ),
+                          )
+                              .toList(),
+
+                          onChanged:
+                              (ExpenseCategory? value) {
+                            if (value == null) return;
+
+                            setState(() {
+                              _selectedCategory = value;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Row(
+                    children: [
+                      Text(
+                        DateFormat.yMMMd().format(
+                          _selectedDate,
+                        ),
+                      ),
+
+                      const Spacer(),
+
+                      TextButton.icon(
+                        onPressed: _presentDatePicker,
+                        icon: const Icon(
+                          Icons.calendar_month,
+                          color: Color(0xFFD95C8A),
+                        ),
+                        label: const Text(
+                          'Choose Date',
+                          style: TextStyle(
+                            color: Color(0xFFD95C8A),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: _submitExpense,
+                      child: const Text(
+                        'Add Expense',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+
+            child: Row(
               children: [
-                TextField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Expense title',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
+                Column(
+                  crossAxisAlignment:
+                  CrossAxisAlignment.start,
+
                   children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _amountController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Amount',
-                          border: OutlineInputBorder(),
-                        ),
+                    const Text(
+                      'Total Spent',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Color(0xFFD95C8A),
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: DropdownButtonFormField<ExpenseCategory>(
-                        value: _selectedCategory,
-                        decoration: const InputDecoration(
-                          labelText: 'Category',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: ExpenseCategory.values
-                            .map(
-                              (ExpenseCategory category) =>
-                              DropdownMenuItem<ExpenseCategory>(
-                                value: category,
-                                child: Text(category.label),
-                              ),
-                        )
-                            .toList(),
-                        onChanged: (ExpenseCategory? value) {
-                          if (value == null) return;
-                          setState(() {
-                            _selectedCategory = value;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
+
                     Text(
-                      'Selected Date: ${DateFormat.yMd().format(_selectedDate)}',
-                    ),
-                    const Spacer(),
-                    TextButton.icon(
-                      onPressed: _presentDatePicker,
-                      icon: const Icon(Icons.calendar_month),
-                      label: const Text('Choose Date'),
+                      '₹${total.toStringAsFixed(2)}',
+
+                      style: const TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFD95C8A),
+                      ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: _submitExpense,
-                    child: const Text('Add expense'),
-                  ),
                 ),
               ],
             ),
           ),
-        ),
 
-        // ── TOTAL + FILTER ROW ───────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _filterDate == null ? 'Total spent' : 'Spent on this day',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  Text(
-                    '\$${total.toStringAsFixed(2)}',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ],
-              ),
-              const Spacer(),
-              if (_filterDate != null)
-                TextButton(
-                  onPressed: () => setState(() => _filterDate = null),
-                  child: const Text('Clear Filter'),
-                ),
-              IconButton(
-                onPressed: _selectFilterDate,
-                icon: Icon(
-                  _filterDate == null
-                      ? Icons.filter_alt_outlined
-                      : Icons.filter_alt,
-                  color: _filterDate == null ? null : Colors.teal,
-                ),
-                tooltip: 'Filter by date',
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
+          const SizedBox(height: 10),
 
-        // ── EXPENSE LIST ─────────────────────────────────────────
-        Expanded(
-          child: displayedExpenses.isEmpty
-              ? Center(
-            child: Text(
-              _filterDate == null
-                  ? 'No expenses yet. Add your first one above.'
-                  : 'No expenses found for this date.',
+          Expanded(
+            child: widget.expenses.isEmpty
+                ? const Center(
+              child: Text(
+                'No expenses yet.\nAdd your first one above.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFD95C8A),
+                ),
+              ),
+            )
+                : ListView.builder(
+              padding: const EdgeInsets.all(12),
+
+              itemCount: widget.expenses.length,
+
+              itemBuilder:
+                  (BuildContext context, int index) {
+                final Expense expense =
+                widget.expenses[index];
+
+                return Dismissible(
+                  key: ValueKey<Expense>(expense),
+
+                  direction:
+                  DismissDirection.endToStart,
+
+                  onDismissed: (_) {
+                    widget.onDeleteExpense(index);
+                  },
+
+                  background: Container(
+                    alignment:
+                    Alignment.centerRight,
+
+                    padding:
+                    const EdgeInsets.only(
+                      right: 20,
+                    ),
+
+                    color: Colors.red,
+
+                    child: const Icon(
+                      Icons.delete,
+                      color: Colors.white,
+                    ),
+                  ),
+
+                  child:
+                  ExpenseCard(expense: expense),
+                );
+              },
             ),
-          )
-              : ListView.builder(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            itemCount: displayedExpenses.length,
-            itemBuilder: (BuildContext context, int index) {
-              final Expense expense = displayedExpenses[index];
-              return Dismissible(
-                key: ValueKey<Expense>(expense),
-                direction: DismissDirection.endToStart,
-                onDismissed: (_) {
-                  final int originalIndex =
-                  widget.expenses.indexOf(expense);
-                  widget.onDeleteExpense(originalIndex);
-                },
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20),
-                  color: Colors.red,
-                  child: const Icon(Icons.delete, color: Colors.white),
-                ),
-                child: ExpenseCard(expense: expense),
-              );
-            },
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

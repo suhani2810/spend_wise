@@ -22,7 +22,7 @@ class Expense {
     };
   }
   factory Expense.fromJson(Map<String, dynamic> json) {
-    final String categoryName = (json['category'] ?? 'food'). tostring();
+    final String categoryName = (json['category'] ?? 'food').toString();
     final ExpenseCategory category = ExpenseCategory.values.firstWhere(
           (ExpenseCategory item) => item.name == categoryName,
       orElse: () => ExpenseCategory. food,
@@ -33,7 +33,7 @@ class Expense {
         ? amountValue. toDouble()
         : double.tryParse(amountValue.toString()) ?? 0;
 
-    final String? dateString = json['date'] as String ?;
+    final String? dateString = json['date'] as String?;
     final DateTime date =
     dateString != null ? DateTime.parse(dateString) : DateTime.now();
 

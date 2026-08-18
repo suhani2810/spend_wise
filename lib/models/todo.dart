@@ -18,9 +18,9 @@ class Todo {
   }
 
   factory Todo.fromJson(Map<String, dynamic> json) {
-    final String? createdString = json['createdAt'] as String ?;
+    final String? createdString = json['createdAt'] as String?;
     return Todo(
-      title: (json['title'] ?? '').tostring(),
+      title: (json['title'] ?? '').toString(),
       isDone: json['isDone' ] == true,
       createdAt: createdString != null
           ? DateTime.parse(createdString)
